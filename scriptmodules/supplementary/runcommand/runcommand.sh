@@ -984,10 +984,14 @@ function check_menu() {
 
 # calls script with parameters SYSTEM, EMULATOR, ROM, and commandline
 function user_script() {
+    local dont_launch=0
     local script="$CONFIGDIR/all/$1"
     if [[ -f "$script" ]]; then
         bash "$script" "$SYSTEM" "$EMULATOR" "$ROM" "$COMMAND" </dev/tty 2>>"$LOG"
+        dont_launch=$?
     fi
+
+    return $dont_launch
 }
 
 function restore_cursor_and_exit() {
@@ -1031,7 +1035,10 @@ function runcommand() {
 
     rm -f "$LOG"
     echo -e "$SYSTEM\n$EMULATOR\n$ROM\n$COMMAND" >/dev/shm/runcommand.info
-    user_script "runcommand-onstart.sh"
+    if ! user_script "runcommand-onstart.sh"; then
+        clear
+        restore_cursor_and_exit 0
+    fi
 
     set_save_vars
 
